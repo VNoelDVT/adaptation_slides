@@ -51,7 +51,7 @@ const ChatInterface = () => {
         <div className="flex flex-col h-screen w-screen bg-gray-900 text-white">
             {/* Header */}
             <header className="p-4 bg-gray-800 shadow text-3xl font-bold flex items-center gap-2 w-full">
-                <span role="img" aria-label="brain">🧠</span> Consultant Coach
+                <span role="img" aria-label="brain">🧠</span> Slides Maker
             </header>
 
             {/* Chat History */}
