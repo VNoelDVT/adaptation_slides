@@ -37,6 +37,16 @@ def slides_adaptation_agent(state: dict) -> dict:
     slides_structure = get_presentation_structure(new_presentation_id)
     print("🧱 Slides analysées :", len(slides_structure))
 
+    # 🔍 Affichage de la structure pour debug
+    from pprint import pprint
+    for slide_index, (slide_id, elements) in enumerate(slides_structure.items()):
+        print(f"\n--- 🖼️ Slide {slide_index + 1} (ID: {slide_id}) ---")
+        for element in elements:
+            print(f"🔹 Type: {element['type']}")
+            print(f"🔹 Texte: {repr(element['text'][:100])}")
+            print(f"🔹 Object ID: {element['objectId']}")
+            print("---")
+
     # Étape 3 : Détection automatique de langue
     lang_code = detect_language(full_source_text)
     print("🌍 Langue détectée :", lang_code)
@@ -46,7 +56,8 @@ def slides_adaptation_agent(state: dict) -> dict:
     for slide_id, elements in slides_structure.items():
         rewritten[slide_id] = []
         for element in elements:
-            if element["type"] != "BODY":
+            #if element["type"] != "BODY":
+            if element["type"] == "TITLE":
                 rewritten[slide_id].append(element)  # Conserve titres intacts
                 continue
 
