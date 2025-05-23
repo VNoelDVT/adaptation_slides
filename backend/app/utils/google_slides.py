@@ -165,6 +165,47 @@ def duplicate_template_presentation(user_id="user") -> str:
 
 #     return structure
 
+# def get_presentation_structure(presentation_id: str) -> dict:
+#     slides_service, _ = get_google_services()
+#     presentation = slides_service.presentations().get(presentationId=presentation_id).execute()
+
+#     structure = {}
+#     for slide in presentation.get("slides", []):
+#         slide_id = slide.get("objectId")
+#         structure[slide_id] = []
+
+#         for element in slide.get("pageElements", []):
+#             shape = element.get("shape")
+#             if not shape:
+#                 continue
+
+#             text_elements = shape.get("text", {}).get("textElements", [])
+#             raw_text = ''.join([
+#                 te.get("textRun", {}).get("content", "")
+#                 for te in text_elements if "textRun" in te
+#             ]).strip()
+
+#             if not raw_text:
+#                 continue
+
+#             # Utiliser le placeholderType au lieu du shapeType
+#             placeholder_info = shape.get("placeholder")
+#             if placeholder_info:
+#                 placeholder_type = placeholder_info.get("type", "UNKNOWN")
+#                 element_type = placeholder_type  # direct, ex: TITLE, BODY, SUBTITLE, etc.
+#             else:
+#                 element_type = "TITLE"
+
+#             structure[slide_id].append({
+#                 "objectId": element["objectId"],
+#                 "text": raw_text,
+#                 "type": element_type
+#             })
+
+#     return structure
+
+
+
 def get_presentation_structure(presentation_id: str) -> dict:
     slides_service, _ = get_google_services()
     presentation = slides_service.presentations().get(presentationId=presentation_id).execute()
@@ -188,26 +229,60 @@ def get_presentation_structure(presentation_id: str) -> dict:
             if not raw_text:
                 continue
 
-            # Utiliser le placeholderType au lieu du shapeType
             placeholder_info = shape.get("placeholder")
             if placeholder_info:
-                placeholder_type = placeholder_info.get("type", "UNKNOWN")
-                element_type = placeholder_type  # direct, ex: TITLE, BODY, SUBTITLE, etc.
+                element_type = placeholder_info.get("type", "UNKNOWN")
             else:
-                element_type = "TITLE"
+                element_type = "UNKNOWN"
+
+            # Extraction des attributs de style du premier textRun
+            text_style = {}
+            for te in text_elements:
+                if "textRun" in te:
+                    text_style = te["textRun"].get("style", {})
+                    break
 
             structure[slide_id].append({
                 "objectId": element["objectId"],
                 "text": raw_text,
-                "type": element_type
+                "type": element_type,
+                "style": text_style  # <- ici on stocke le style
             })
 
     return structure
 
 
 
-
 # --- Mettre à jour le contenu des zones de texte ---
+# def update_slide_text_elements(presentation_id: str, updates: dict):
+#     slides_service, _ = get_google_services()
+#     requests = []
+
+#     for slide_id, elements in updates.items():
+#         for element in elements:
+#             if "objectId" not in element or "text" not in element:
+#                 continue
+#             requests.append({
+#                 "deleteText": {
+#                     "objectId": element["objectId"],
+#                     "textRange": {
+#                         "type": "ALL"
+#                     }
+#                 }
+#             })
+#             requests.append({
+#                 "insertText": {
+#                     "objectId": element["objectId"],
+#                     "text": element["text"]
+#                 }
+#             })
+
+#     if requests:
+#         slides_service.presentations().batchUpdate(
+#             presentationId=presentation_id,
+#             body={"requests": requests}
+#         ).execute()
+
 def update_slide_text_elements(presentation_id: str, updates: dict):
     slides_service, _ = get_google_services()
     requests = []
@@ -216,12 +291,11 @@ def update_slide_text_elements(presentation_id: str, updates: dict):
         for element in elements:
             if "objectId" not in element or "text" not in element:
                 continue
+
             requests.append({
                 "deleteText": {
                     "objectId": element["objectId"],
-                    "textRange": {
-                        "type": "ALL"
-                    }
+                    "textRange": {"type": "ALL"}
                 }
             })
             requests.append({
@@ -231,11 +305,26 @@ def update_slide_text_elements(presentation_id: str, updates: dict):
                 }
             })
 
+            # Appliquer le style uniquement si fourni
+            if "style" in element:
+                style = element["style"]
+                text_style_request = {
+                    "updateTextStyle": {
+                        "objectId": element["objectId"],
+                        "style": style,
+                        "fields": ",".join(style.keys()),  # ex: fontSize, bold, foregroundColor
+                        "textRange": {"type": "ALL"}
+                    }
+                }
+                requests.append(text_style_request)
+
     if requests:
         slides_service.presentations().batchUpdate(
             presentationId=presentation_id,
             body={"requests": requests}
         ).execute()
+
+
 
 # --- Générer un lien partageable public ---
 def get_shareable_url(file_id: str) -> str:

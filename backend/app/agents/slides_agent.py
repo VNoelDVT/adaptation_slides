@@ -57,39 +57,69 @@ def slides_adaptation_agent(state: dict) -> dict:
         rewritten[slide_id] = []
         for element in elements:
             #if element["type"] != "BODY":
-            if element["type"] == "TITLE":
-                rewritten[slide_id].append(element)  # Conserve titres intacts
+            # if element["type"] == "TITLE":
+            #     rewritten[slide_id].append(element)  # Conserve titres intacts
+            #     continue
+            if element["type"] in ["TITLE", "SUBTITLE"]:
+                rewritten[slide_id].append(element)
                 continue
 
+#             prompt = f"""
+# Tu es un assistant intelligent et expert dans l'adaptation de slides. Tu sais qu'il ne faut pas ajouter de mots, juste 
+# les changer et les adapter, ici dans ce cas tu dois adapter chacun des contenus qui sont selon toi pas des titres
+# suivant ces informations: {full_source_text}. Tu n'ajouteras aucun commentaire ni aucun mot, tu ne feras qu'adapter les 
+# textes que tu recevras en gardant le même nombre de mots ou alors même un peu moins de mots.
+# Pour rappel, voici le contenu cible, qui doit guider ton adaptation:
+# ---
+# {full_source_text}
+# ---
+# Tu sais aussi que des bouts de texte comme "Enjeux clients
+# Clients prioritaires cibles
+# Etat des lieux des offres actuelles (solutions et concurrents)
+# Perspectives et évolution du marché
+# " n'ont pas besoin d'être adaptés car déjà génériques, ainsi que les bouts de texte où l'on parle des membres clés. 
+# De même, tu n'as pas besoin d'adapter les slides avec une table des matières, et les zones de texte comme celle-ci "Sommaire exécutif
+# Analyse du marché 
+# Présentation de l’offre 
+# Porteur et équipes 
+# Business Plan et prévisionnel
+# Supports Marketing  
+# ".
+# Tu es maintenant aligné avec ce texte: {full_source_text}, tu respectes le ton et la langue d’origine ({lang_code}). Tu vas maintenant adapter 
+# ce texte:
+
+# Texte original :
+# {element['text']}
+
+# Texte réécrit :
+# """
+
             prompt = f"""
-Tu es un assistant intelligent et expert dans l'adaptation de slides. Tu sais qu'il ne faut pas ajouter de mots, juste 
-les changer et les adapter, ici dans ce cas tu dois adapter chacun des contenus qui sont selon toi pas des titres
-suivant ces informations: {full_source_text}. Tu n'ajouteras aucun commentaire ni aucun mot, tu ne feras qu'adapter les 
-textes que tu recevras en gardant le même nombre de mots ou alors même un peu moins de mots.
-Pour rappel, voici le contenu cible, qui doit guider ton adaptation:
+Tu es un assistant expert en adaptation de contenus pour des slides Google. 
+Tu dois adapter le texte ci-dessous pour l’aligner avec les informations fournies, 
+en respectant la même langue ({lang_code}) et le même ton.
+
+Règles :
+- Ne change pas les titres ou sous-titres (ils sont déjà exclus automatiquement).
+- Ne reformule pas les contenus déjà génériques (ex: "Sommaire", "Analyse du marché", etc.).
+- Ne commente pas. Ne justifie pas. Ne dépasse pas la longueur originale.
+- Contente-toi de reformuler le texte si c’est pertinent, sinon retourne-le inchangé.
+
+Contexte cible :
 ---
 {full_source_text}
 ---
-Tu sais aussi que des bouts de texte comme "Enjeux clients
-Clients prioritaires cibles
-Etat des lieux des offres actuelles (solutions et concurrents)
-Perspectives et évolution du marché
-" n'ont pas besoin d'être adaptés car déjà génériques, ainsi que les bouts de texte où l'on parle des membres clés. 
-De même, tu n'as pas besoin d'adapter les slides avec une table des matières, et les zones de texte comme celle-ci "Sommaire exécutif
-Analyse du marché 
-Présentation de l’offre 
-Porteur et équipes 
-Business Plan et prévisionnel
-Supports Marketing  
-".
-Tu es maintenant aligné avec ce texte: {full_source_text}, tu respectes le ton et la langue d’origine ({lang_code}). Tu vas maintenant adapter 
-ce texte:
 
-Texte original :
+Texte à adapter :
+---
 {element['text']}
+---
 
-Texte réécrit :
+Texte adapté :
 """
+
+
+
             try:
                 new_text = generate_content(prompt).strip()
                 rewritten[slide_id].append({**element, "text": new_text})
