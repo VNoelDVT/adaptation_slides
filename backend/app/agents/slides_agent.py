@@ -101,9 +101,7 @@ en respectant la même langue ({lang_code}) et le même ton.
 
 Règles :
 - Ne change pas les titres ou sous-titres (ils sont déjà exclus automatiquement).
-- Ne reformule pas les contenus déjà génériques (ex: "Sommaire", "Analyse du marché", etc.).
 - Ne commente pas. Ne justifie pas. Ne dépasse pas la longueur originale.
-- Contente-toi de reformuler le texte si c’est pertinent, sinon retourne-le inchangé.
 
 Contexte cible :
 ---
